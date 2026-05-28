@@ -30,6 +30,7 @@ jobs:
           username: ${{ secrets.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
+          command_timeout: 45m
           envs: REACT_APP_API_URL,API_BIND_IP,FRONT_BIND_IP
           script: |
             set -euo pipefail
@@ -111,3 +112,6 @@ jobs:
 
             $COMPOSE_CMD -f back_student/docker-compose.yml ps
             $COMPOSE_CMD -f front_student/docker-compose.yml ps
+
+            curl -fsS --max-time 30 "http://localhost:3000/product" >/dev/null
+            curl -fsS --max-time 30 "http://localhost:8080" >/dev/null
