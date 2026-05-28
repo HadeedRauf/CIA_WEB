@@ -69,14 +69,22 @@ Allow inbound security group ports as needed:
 - `8080` for frontend
 - `3000` for backend API
 
+## Current Instance (as of 2026-05-29)
+
+- Instance ID: `i-0194cd90760dd5d1d`
+- Public IP: `52.47.190.239`
+- Region: `eu-west-3`
+- Key pair: `CIA_KEY` (`/home/hadeed/Downloads/CIA_KEY.pem`)
+
 ## Suggested Secret Values For Your Current Setup
 
+- `EC2_HOST`: `52.47.190.239`
 - `EC2_USER`: `ec2-user`
 - `EC2_PORT`: `22`
 - `EC2_DEPLOY_PATH`: `/opt/CIA_WEB`
 - `API_BIND_IP`: `0.0.0.0`
 - `FRONT_BIND_IP`: `0.0.0.0`
-- `REACT_APP_API_URL`: `YOUR_EC2_PUBLIC_IP:3000`
+- `REACT_APP_API_URL`: `http://52.47.190.239:3000`
 
 Important:
 - Do not set `EC2_SSH_KEY` to the file path. Paste the full key file content from `/home/hadeed/Downloads/CIA_KEY.pem` into the secret value.
