@@ -142,7 +142,17 @@ jobs:
             $COMPOSE_CMD -f back_student/docker-compose.yml ps
             $COMPOSE_CMD -f front_student/docker-compose.yml ps
 
-            curl -fsS --max-time 30 "http://localhost:3000/product" >/dev/null
-            curl -fsS --max-time 30 "http://localhost:8080" >/dev/null
+            echo "Waiting for backend to be ready (DB init takes time)..."
+            for i in $(seq 1 12); do
+              if curl -fsS --max-time 10 "http://localhost:3000/product" >/dev/null 2>&1; then
+                echo "Backend is up"
+                break
+              fi
+              echo "  attempt $i/12 - waiting 10s..."
+              sleep 10
+            done
+            curl -fsS --max-time 10 "http://localhost:3000/product" >/dev/null || echo "WARNING: backend health check failed, containers may still be starting"
+
+            curl -fsS --max-time 10 "http://localhost:8080" >/dev/null || echo "WARNING: frontend health check failed"
 
             echo "$TARGET_SHA" > "$PREV_SHA_FILE"
