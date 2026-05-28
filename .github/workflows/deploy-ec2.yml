@@ -19,16 +19,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy project files to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER || 'ec2-user' }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
-          source: "back_student,front_student"
-          target: ${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}
-
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         env:
@@ -43,7 +33,20 @@ jobs:
           envs: REACT_APP_API_URL,API_BIND_IP,FRONT_BIND_IP
           script: |
             set -euo pipefail
-            cd "${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}"
+            DEPLOY_ROOT="${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}"
+            APP_DIR="$DEPLOY_ROOT/repo"
+
+            sudo mkdir -p "$DEPLOY_ROOT"
+            sudo chown -R "$(whoami):$(whoami)" "$DEPLOY_ROOT"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "https://github.com/${{ github.repository }}.git" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin
+            git checkout "${{ github.ref_name }}"
+            git reset --hard "${{ github.sha }}"
 
             if ! swapon --show | grep -q '/swapfile'; then
               if [ ! -f /swapfile ]; then
