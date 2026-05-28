@@ -45,8 +45,19 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}"
 
-            if docker compose version >/dev/null 2>&1; then
-              COMPOSE_CMD="docker compose"
+            DOCKER_CMD="docker"
+            if ! docker info >/dev/null 2>&1; then
+              DOCKER_CMD="sudo docker"
+            fi
+
+            if ! $DOCKER_CMD compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+              if command -v dnf >/dev/null 2>&1; then
+                sudo dnf install -y docker-compose-plugin
+              fi
+            fi
+
+            if $DOCKER_CMD compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="$DOCKER_CMD compose"
             else
               COMPOSE_CMD="docker-compose"
             fi
