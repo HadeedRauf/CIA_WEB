@@ -51,15 +51,37 @@ jobs:
             fi
 
             if ! $DOCKER_CMD compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
-              if command -v dnf >/dev/null 2>&1; then
-                sudo dnf install -y docker-compose-plugin
+              if ! command -v curl >/dev/null 2>&1 && command -v dnf >/dev/null 2>&1; then
+                sudo dnf install -y curl
               fi
+
+              ARCH="$(uname -m)"
+              if [ "$ARCH" = "x86_64" ]; then
+                COMPOSE_ARCH="x86_64"
+              elif [ "$ARCH" = "aarch64" ]; then
+                COMPOSE_ARCH="aarch64"
+              else
+                echo "Unsupported architecture for docker-compose: $ARCH"
+                exit 1
+              fi
+
+              sudo curl -fsSL "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-${COMPOSE_ARCH}" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
             fi
 
             if $DOCKER_CMD compose version >/dev/null 2>&1; then
               COMPOSE_CMD="$DOCKER_CMD compose"
             else
-              COMPOSE_CMD="docker-compose"
+              if command -v docker-compose >/dev/null 2>&1; then
+                if [ "$DOCKER_CMD" = "sudo docker" ]; then
+                  COMPOSE_CMD="sudo docker-compose"
+                else
+                  COMPOSE_CMD="docker-compose"
+                fi
+              else
+                echo "Docker Compose is not available"
+                exit 1
+              fi
             fi
 
             export API_BIND_IP="${API_BIND_IP:-0.0.0.0}"
