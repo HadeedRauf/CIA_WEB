@@ -27,7 +27,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           source: "back_student,front_student"
-          target: ${{ secrets.EC2_DEPLOY_PATH }}
+          target: ${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -43,7 +43,7 @@ jobs:
           envs: REACT_APP_API_URL,API_BIND_IP,FRONT_BIND_IP
           script: |
             set -euo pipefail
-            cd "${{ secrets.EC2_DEPLOY_PATH }}"
+            cd "${{ secrets.EC2_DEPLOY_PATH || '/opt/CIA_WEB' }}"
 
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
