@@ -30,7 +30,9 @@ jobs:
           username: ${{ secrets.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
+          timeout: 120s
           command_timeout: 45m
+          debug: true
           envs: REACT_APP_API_URL,API_BIND_IP,FRONT_BIND_IP
           script: |
             set -euo pipefail
@@ -45,9 +47,23 @@ jobs:
             fi
 
             cd "$APP_DIR"
+            TARGET_SHA="${{ github.sha }}"
+            PREV_SHA_FILE="$DEPLOY_ROOT/.last_deployed_sha"
+            PREV_SHA=""
+            if [ -f "$PREV_SHA_FILE" ]; then
+              PREV_SHA="$(cat "$PREV_SHA_FILE")"
+            fi
+
             git fetch origin
             git checkout "${{ github.ref_name }}"
-            git reset --hard "${{ github.sha }}"
+            git reset --hard "$TARGET_SHA"
+
+            CHANGED_FILES=""
+            if [ -n "$PREV_SHA" ] && git cat-file -e "$PREV_SHA^{commit}" 2>/dev/null; then
+              CHANGED_FILES="$(git diff --name-only "$PREV_SHA" "$TARGET_SHA" || true)"
+            else
+              CHANGED_FILES="$(git ls-files)"
+            fi
 
             if ! swapon --show | grep -q '/swapfile'; then
               if [ ! -f /swapfile ]; then
@@ -107,11 +123,26 @@ jobs:
             export FRONT_BIND_IP="${FRONT_BIND_IP:-0.0.0.0}"
             export REACT_APP_API_URL="${REACT_APP_API_URL:-localhost:3000}"
 
-            $COMPOSE_CMD -f back_student/docker-compose.yml up -d --build
-            $COMPOSE_CMD -f front_student/docker-compose.yml up -d --build
+            if echo "$CHANGED_FILES" | grep -q '^back_student/'; then
+              echo "Backend changed, rebuilding backend stack"
+              $COMPOSE_CMD -f back_student/docker-compose.yml up -d --build
+            else
+              echo "Backend unchanged, starting without rebuild"
+              $COMPOSE_CMD -f back_student/docker-compose.yml up -d
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q '^front_student/'; then
+              echo "Frontend changed, rebuilding frontend stack"
+              $COMPOSE_CMD -f front_student/docker-compose.yml up -d --build
+            else
+              echo "Frontend unchanged, starting without rebuild"
+              $COMPOSE_CMD -f front_student/docker-compose.yml up -d
+            fi
 
             $COMPOSE_CMD -f back_student/docker-compose.yml ps
             $COMPOSE_CMD -f front_student/docker-compose.yml ps
 
             curl -fsS --max-time 30 "http://localhost:3000/product" >/dev/null
             curl -fsS --max-time 30 "http://localhost:8080" >/dev/null
+
+            echo "$TARGET_SHA" > "$PREV_SHA_FILE"
