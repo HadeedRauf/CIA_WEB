@@ -10,5 +10,4 @@ RUN yarn install
 
 
 EXPOSE 3000
-CMD ["yarn", "migration:start"]
-CMD ["yarn", "start"]
+CMD ["sh", "-c", "yarn schema:sync && yarn migration:run && yarn start"]
