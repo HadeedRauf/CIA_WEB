@@ -64,10 +64,6 @@ Regular users have limited access:
 - On EC2, bind address is controlled via environment variables (`API_BIND_IP`, `FRONT_BIND_IP`) injected at deploy time
 - The MySQL database container has **no published host ports** — it is only reachable inside the Docker bridge network
 
-### User Cleanup
-- Two inactive/test accounts were identified and permanently deleted from the database:
-  - `nord230205` (id: 11)
-  - `nchk230219` (id: 12)
 
 ### CI/CD — All Secrets in GitHub Secrets
 No credentials or sensitive values are stored in the codebase. All are injected at deploy time via GitHub Actions secrets:
