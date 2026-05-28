@@ -23,9 +23,9 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ${{ secrets.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || '22' }}
+          port: ${{ secrets.EC2_PORT || 22 }}
           source: "back_student,front_student"
           target: ${{ secrets.EC2_DEPLOY_PATH }}
 
@@ -37,9 +37,9 @@ jobs:
           FRONT_BIND_IP: ${{ secrets.FRONT_BIND_IP }}
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          username: ${{ secrets.EC2_USER || 'ec2-user' }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || '22' }}
+          port: ${{ secrets.EC2_PORT || 22 }}
           envs: REACT_APP_API_URL,API_BIND_IP,FRONT_BIND_IP
           script: |
             set -euo pipefail

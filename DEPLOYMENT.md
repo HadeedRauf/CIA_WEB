@@ -16,7 +16,7 @@ Trigger:
 
 Add these in repository settings:
 - `EC2_HOST`: Public IP or DNS of your EC2 instance
-- `EC2_USER`: SSH user (for Ubuntu AMI usually `ubuntu`)
+- `EC2_USER`: SSH user (for Amazon Linux 2023 use `ec2-user`)
 - `EC2_SSH_KEY`: Private key content for the EC2 key pair
 - `EC2_DEPLOY_PATH`: Absolute path on EC2, for example `/opt/CIA_WEB`
 
@@ -27,6 +27,35 @@ Optional:
 - `FRONT_BIND_IP`: Frontend host bind, default `0.0.0.0`
 
 ## EC2 Prerequisites
+
+For your instance type (Amazon Linux 2023):
+
+One-time bootstrap from your machine:
+
+```bash
+chmod 400 /home/hadeed/Downloads/CIA_KEY.pem
+ssh -i /home/hadeed/Downloads/CIA_KEY.pem ec2-user@YOUR_EC2_PUBLIC_IP
+```
+
+Then on EC2:
+
+```bash
+sudo dnf update -y
+sudo dnf install -y docker git
+sudo systemctl enable --now docker
+sudo usermod -aG docker ec2-user
+sudo mkdir -p /opt/CIA_WEB
+sudo chown -R ec2-user:ec2-user /opt/CIA_WEB
+```
+
+Reconnect once to apply docker group membership:
+
+```bash
+exit
+ssh -i /home/hadeed/Downloads/CIA_KEY.pem ec2-user@YOUR_EC2_PUBLIC_IP
+docker version
+docker compose version || docker-compose version
+```
 
 Install on EC2:
 - Docker
@@ -39,6 +68,18 @@ Allow inbound security group ports as needed:
 - `22` for SSH
 - `8080` for frontend
 - `3000` for backend API
+
+## Suggested Secret Values For Your Current Setup
+
+- `EC2_USER`: `ec2-user`
+- `EC2_PORT`: `22`
+- `EC2_DEPLOY_PATH`: `/opt/CIA_WEB`
+- `API_BIND_IP`: `0.0.0.0`
+- `FRONT_BIND_IP`: `0.0.0.0`
+- `REACT_APP_API_URL`: `YOUR_EC2_PUBLIC_IP:3000`
+
+Important:
+- Do not set `EC2_SSH_KEY` to the file path. Paste the full key file content from `/home/hadeed/Downloads/CIA_KEY.pem` into the secret value.
 
 ## Local Default Security
 
