@@ -22,6 +22,33 @@ Default admin credentials: `admin` / `admin`
 
 ---
 
+## Role-Based Access Control
+
+The API enforces two roles: `ADMIN` and `USER`. Every protected route requires a valid JWT (checked by `checkJwt` middleware) and optionally a role check (`checkRole`).
+
+### Admin (`ADMIN`)
+Admins have full access to everything:
+
+| Resource | Actions |
+|----------|---------|
+| Products | View all, view stats, view one, **create, edit, delete** |
+| Orders | View all, view stats, view one, **edit, delete** |
+| Users | View all, view one, **create, edit, delete** |
+| Auth | Login, register, view own profile, change password |
+
+### User (`USER`)
+Regular users have limited access:
+
+| Resource | Actions |
+|----------|---------|
+| Products | View all, view stats, view one (read-only) |
+| Orders | **Place a new order** only (cannot view others' orders) |
+| Auth | Login, register, view own profile, change password |
+
+> Users cannot access order history, manage products, or manage other users. Any attempt returns `401 Unauthorized`.
+
+---
+
 ## Security Hardening
 
 ### Logging — No Sensitive Data Exposed
@@ -30,11 +57,17 @@ Default admin credentials: `admin` / `admin`
 - Authorization headers are stripped from logs
 - Morgan uses a custom `safe-body` token that redacts any field matching: `password`, `token`, `auth`, `authorization`, `jwt`
 - All sensitive fields are recursively sanitised before being written to stdout
+- A single combined log format is used — no separate token/auth header logging lines
 
 ### Network — Minimal Port Exposure
 - Locally, both services bind to `127.0.0.1` only (not exposed on the network interface)
 - On EC2, bind address is controlled via environment variables (`API_BIND_IP`, `FRONT_BIND_IP`) injected at deploy time
-- The MySQL database container has no published host ports — it is only reachable inside the Docker bridge network
+- The MySQL database container has **no published host ports** — it is only reachable inside the Docker bridge network
+
+### User Cleanup
+- Two inactive/test accounts were identified and permanently deleted from the database:
+  - `nord230205` (id: 11)
+  - `nchk230219` (id: 12)
 
 ### CI/CD — All Secrets in GitHub Secrets
 No credentials or sensitive values are stored in the codebase. All are injected at deploy time via GitHub Actions secrets:
